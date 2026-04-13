@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Simulator for AI Products</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<div class="scanline"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="page">
+
+  <header class="reveal">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-mark-bg"></div>
+        <div class="logo-mark-inner">
+          <svg viewBox="0 0 22 22" fill="none"><path d="M4 17L11 5L18 17" stroke="#07070f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 12.5H15" stroke="#07070f" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div>
+        <div class="logo-name">Decision Simulator</div>
+        <div class="logo-sub">for AI Products</div>
+      </div>
+    </div>
+    <button class="api-toggle" onclick="toggleApi()">
+      <div class="sdot" id="sdot"></div>
+      <span id="apiLabel">Add API Key</span>
+    </button>
+  </header>
+
+  <div class="api-panel" id="apiPanel">
+    <div class="aptt">Anthropic API Key</div>
+    <div class="aptd">Your key lives in your browser only — it never goes anywhere except directly to Anthropic's API. Get one at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</div>
+    <div class="api-row">
+      <input type="password" class="api-input" id="apiInput" placeholder="sk-ant-api03-...">
+      <button class="btn ac" onclick="saveKey()">Save</button>
+      <button class="btn" onclick="clearKey()">Remove</button>
+    </div>
+  </div>
+
+  <div class="hero reveal" style="transition-delay:.1s">
+    <div class="hero-tag"><div class="hero-tag-dot"></div>Simulate before you ship</div>
+    <h1 class="hero-headline"><span class="l1">Every AI decision</span><span class="l2">has a cost.</span></h1>
+    <p class="hero-desc">Describe a product move — swapping models, rolling out new features, changing moderation policies — and see how it plays out across the metrics that actually matter, all before you commit.</p>
+    <div class="hero-stats">
+      <div><div class="hstat-num">5</div><div class="hstat-lbl">metrics tracked</div></div>
+      <div><div class="hstat-num">∞</div><div class="hstat-lbl">decisions to test</div></div>
+      <div><div class="hstat-num">&lt;5s</div><div class="hstat-lbl">per analysis</div></div>
+    </div>
+  </div>
+
+  <div class="mgrid reveal" style="transition-delay:.2s">
+    <!-- INPUT -->
+    <div>
+      <div class="inp-panel">
+        <div class="ph">
+          <span class="ph-label">Decision Input</span>
+          <div class="ph-dots"><div class="phdot"></div><div class="phdot"></div><div class="phdot"></div></div>
+        </div>
+        <div class="pb">
+          <div class="presets-lbl">Quick scenarios</div>
+          <div class="presets" id="presetsWrap"></div>
+          <textarea class="dtarea" id="dtarea"
+            placeholder="Describe your decision in plain English...&#10;&#10;e.g. &quot;We want to replace our fine-tuned model with a smaller open-source alternative to cut costs by 70%.&quot;"
+            oninput="onInput()" maxlength="600"></textarea>
+          <div class="tafooter">
+            <span class="cc" id="cc">0 / 600</span>
+            <button class="simbtn" id="simbtn" onclick="runSim()">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Run Simulation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="rpanel" id="rpanel">
+      <div class="estate" id="estate">
+        <span class="eicon">◎</span>
+        <div class="etitle">Waiting for a decision</div>
+        <div class="edesc">Pick a scenario or type your own, then hit Run Simulation to see the full breakdown.</div>
+      </div>
+      <div class="lstate" id="lstate">
+        <div class="lring">
+          <div class="lring-bg"></div>
+          <div class="lring-s1"></div>
+          <div class="lring-s2"></div>
+          <div class="lring-s3"></div>
+        </div>
+        <div class="ltxt">Analyzing impact...</div>
+        <div class="lsub"><div class="lticker" id="lticker"></div></div>
+        <div class="lbar-wrap"><div class="lbar-fill"></div></div>
+      </div>
+      <div class="errbanner" id="errbanner"></div>
+      <div id="rc" class="hidden">
+        <div style="margin-bottom:20px">
+          <div class="slabel">Metric Impact</div>
+          <div class="mgrid2" id="mgrid2"></div>
+        </div>
+        <div class="radar-card" style="margin-bottom:20px">
+          <div class="slabel">Tradeoff Radar</div>
+          <div class="radar-wrap"><canvas id="radarChart" role="img" aria-label="Radar chart showing tradeoff scores across accuracy, speed, cost, satisfaction, and safety.">Tradeoff radar.</canvas></div>
+        </div>
+        <div class="fbcard" id="fbcard"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hist reveal" id="hist" style="display:none;transition-delay:.3s">
+    <div class="hist-hdr">
+      <div class="hist-title">Past Simulations</div>
+      <button class="btn" onclick="clearHist()">Clear all</button>
+    </div>
+    <div class="hgrid" id="hgrid"></div>
+  </div>
+
+  <footer class="reveal" style="transition-delay:.4s">
+    <div class="fl">
+      <span>Decision Simulator for AI Products</span>
+      <div class="fdot"></div>
+      <span>v1.0</span>
+    </div>
+    <span id="fts"></span>
+  </footer>
+
+</div>
+<link rel="stylesheet" href="style.css">
+<script src="script.js"></script>
+
+</body>
+</html>
